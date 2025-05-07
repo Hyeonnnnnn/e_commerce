@@ -92,6 +92,11 @@ if (isset($_POST['checkout'])) {
                     foreach ($products as $product):
                 ?>
                     <div class="product-card">
+                        <?php if (!empty($product['product_picture'])): ?>
+                            <div class="product-image">
+                                <img src="../images/<?php echo htmlspecialchars($product['product_picture']); ?>" alt="<?php echo htmlspecialchars($product['name']); ?>">
+                            </div>
+                        <?php endif; ?>
                         <h3><?php echo htmlspecialchars($product['name']); ?></h3>
                         <p class="category"><?php echo htmlspecialchars($product['category']); ?></p>
                         <p class="description"><?php echo htmlspecialchars($product['description']); ?></p>

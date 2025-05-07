@@ -18,8 +18,20 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $price = $_POST['price'] ?? 0;
         $stock = $_POST['stock'] ?? 0;
         $tax_rate = $_POST['tax_rate'] ?? 12.00;
+        
+        // Handle file upload
+        $product_picture = null;
+        if (isset($_FILES['product_image']) && $_FILES['product_image']['error'] === UPLOAD_ERR_OK) {
+            $temp_name = $_FILES['product_image']['tmp_name'];
+            $filename = $_FILES['product_image']['name'];
+            
+            // Move the uploaded file to the images directory
+            if (move_uploaded_file($temp_name, "../images/$filename")) {
+                $product_picture = $filename;
+            }
+        }
 
-        if (addProduct($name, $category, $description, $price, $stock, $tax_rate)) {
+        if (addProduct($name, $category, $description, $price, $stock, $tax_rate, $product_picture)) {
             $message = 'Product added successfully';
         } else {
             $message = 'Failed to add product';
@@ -78,7 +90,7 @@ if (isset($_GET['report_type'])) {
                             <h3>Add New Product</h3>
                             <span class="close" onclick="closeModal()">&times;</span>
                         </div>
-                        <form method="POST" action="" class="add-product-form">
+                        <form method="POST" action="" class="add-product-form" enctype="multipart/form-data">
                             <div class="form-group">
                                 <label for="name">Product Name:</label>
                                 <input type="text" id="name" name="name" required>
@@ -111,6 +123,10 @@ if (isset($_GET['report_type'])) {
                             <div class="form-group">
                                 <label for="tax_rate">Tax Rate (%):</label>
                                 <input type="number" id="tax_rate" name="tax_rate" step="0.01" value="12.00" required>
+                            </div>
+                            <div class="form-group">
+                                <label for="product_image">Product Image:</label>
+                                <input type="file" id="product_image" name="product_image" accept="image/*">
                             </div>
                             <div class="modal-footer">
                                 <button type="button" class="cancel-btn" onclick="closeModal()">Cancel</button>

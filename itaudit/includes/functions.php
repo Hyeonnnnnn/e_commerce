@@ -38,14 +38,15 @@ function loginUser($username, $password) {
 }
 
 // Inventory Management Functions
-function addProduct($name, $category, $description, $price, $stock, $tax_rate = 12.00) {
+function addProduct($name, $category, $description, $price, $stock, $tax_rate = 12.00, $product_picture = null) {
     global $pdo;
     
     try {
-        $stmt = $pdo->prepare("INSERT INTO products (name, category, description, price, stock_quantity, tax_rate) VALUES (?, ?, ?, ?, ?, ?)");
-        $stmt->execute([$name, $category, $description, $price, $stock, $tax_rate]);
-        logAudit($_SESSION['user_id'], 'product_added', "New product added: $name");
-        return true;
+        $stmt = $pdo->prepare("INSERT INTO products (name, category, description, price, stock_quantity, tax_rate, product_picture) VALUES (?, ?, ?, ?, ?, ?, ?)");
+        $stmt->execute([$name, $category, $description, $price, $stock, $tax_rate, $product_picture]);
+        $productId = $pdo->lastInsertId();
+        logAudit($_SESSION['user_id'], 'product_added', "New product added: $name (ID: $productId)");
+        return $productId;
     } catch(PDOException $e) {
         return false;
     }
@@ -111,17 +112,30 @@ function getProduct($id) {
     }
 }
 
-function updateProduct($id, $name, $category, $description, $price, $stock, $tax_rate) {
+function updateProduct($id, $name, $category, $description, $price, $stock, $tax_rate, $product_picture = null) {
     global $pdo;
     
     try {
-        $stmt = $pdo->prepare("
-            UPDATE products 
-            SET name = ?, category = ?, description = ?, price = ?, 
-                stock_quantity = ?, tax_rate = ?
-            WHERE id = ?
-        ");
-        $stmt->execute([$name, $category, $description, $price, $stock, $tax_rate, $id]);
+        // If a new image was provided, update the image as well
+        if ($product_picture) {
+            $stmt = $pdo->prepare("
+                UPDATE products 
+                SET name = ?, category = ?, description = ?, price = ?, 
+                    stock_quantity = ?, tax_rate = ?, product_picture = ?
+                WHERE id = ?
+            ");
+            $stmt->execute([$name, $category, $description, $price, $stock, $tax_rate, $product_picture, $id]);
+        } else {
+            // Otherwise, don't change the image
+            $stmt = $pdo->prepare("
+                UPDATE products 
+                SET name = ?, category = ?, description = ?, price = ?, 
+                    stock_quantity = ?, tax_rate = ?
+                WHERE id = ?
+            ");
+            $stmt->execute([$name, $category, $description, $price, $stock, $tax_rate, $id]);
+        }
+        
         logAudit($_SESSION['user_id'], 'product_updated', "Updated product: $name");
         return true;
     } catch(PDOException $e) {

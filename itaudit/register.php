@@ -17,7 +17,7 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
         $error = 'Passwords do not match';
     } else {
         if (registerUser($username, $email, $password)) {
-            header('Location: index.php?registered=1');
+            header('Location: login.php?registered=1');
             exit();
         } else {
             $error = 'Registration failed. Username or email might already exist.';
@@ -58,7 +58,8 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             </div>
             <button type="submit">Register</button>
         </form>
-        <p>Already have an account? <a href="index.php">Login here</a></p>
+        <p>Already have an account? <a href="login.php">Login here</a></p>
+        <p><a href="index.php">Back to Home</a></p>
     </div>
 </body>
 </html>

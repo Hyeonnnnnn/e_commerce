@@ -66,7 +66,25 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
 
     <main>
         <?php if ($message): ?>
-            <div class="message"><?php echo htmlspecialchars($message); ?></div>
+            <div class="message" id="message-notification"><?php echo htmlspecialchars($message); ?></div>
+            <script>
+                // Auto-hide message after 3 seconds
+                setTimeout(function() {
+                    var messageElement = document.getElementById('message-notification');
+                    if (messageElement) {
+                        messageElement.style.opacity = '1';
+                        // Fade out effect
+                        var fadeEffect = setInterval(function() {
+                            if (messageElement.style.opacity > 0) {
+                                messageElement.style.opacity -= 0.1;
+                            } else {
+                                clearInterval(fadeEffect);
+                                messageElement.style.display = 'none';
+                            }
+                        }, 50);
+                    }
+                }, 3000);
+            </script>
         <?php endif; ?>
 
         <section class="edit-product">

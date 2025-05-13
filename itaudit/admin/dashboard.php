@@ -1,5 +1,6 @@
 <?php
 require_once '../includes/functions.php';
+require_once '../config/database.php'; // Add database connection at the beginning of the file
 
 if (!isLoggedIn() || !isAdmin()) {
     header('Location: ../index.php');
@@ -614,6 +615,11 @@ if (isset($_GET['report_type'])) {
                         </a>
                     </li>
                     <li class="nav-item">
+                        <a class="nav-link <?php echo ($action === 'logs') ? 'active' : ''; ?>" href="?action=logs">
+                            <i class="fas fa-history"></i> Logs
+                        </a>
+                    </li>
+                    <li class="nav-item">
                         <a class="nav-link" href="../includes/logout.php">
                             <i class="fas fa-sign-out-alt"></i> Logout
                         </a>
@@ -972,6 +978,174 @@ if (isset($_GET['report_type'])) {
                     <p>Select a date range and generate a report to view sales data</p>
                 </div>
             <?php endif; ?>
+            
+        <?php elseif ($action === 'logs'): ?>
+            <h1 class="page-title">
+                <i class="fas fa-history me-2"></i>Audit Logs
+            </h1>
+            
+            <div class="dash-card filter-form mb-4">
+                <form method="GET" action="" class="row g-3">
+                    <input type="hidden" name="action" value="logs">
+                    
+                    <div class="col-md-3">
+                        <label for="log_start_date" class="form-label">From Date</label>
+                        <input type="date" class="form-control" id="log_start_date" name="log_start_date" 
+                               value="<?php echo isset($_GET['log_start_date']) ? htmlspecialchars($_GET['log_start_date']) : date('Y-m-d', strtotime('-7 days')); ?>">
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="log_end_date" class="form-label">To Date</label>
+                        <input type="date" class="form-control" id="log_end_date" name="log_end_date" 
+                               value="<?php echo isset($_GET['log_end_date']) ? htmlspecialchars($_GET['log_end_date']) : date('Y-m-d'); ?>">
+                    </div>
+                    
+                    <div class="col-md-3">
+                        <label for="action_type" class="form-label">Action Type</label>
+                        <select class="form-select" id="action_type" name="action_type">
+                            <option value="">All Actions</option>
+                            <option value="user_login" <?php echo (isset($_GET['action_type']) && $_GET['action_type'] === 'user_login') ? 'selected' : ''; ?>>Login</option>
+                            <option value="user_logout" <?php echo (isset($_GET['action_type']) && $_GET['action_type'] === 'user_logout') ? 'selected' : ''; ?>>Logout</option>
+                            <option value="user_register" <?php echo (isset($_GET['action_type']) && $_GET['action_type'] === 'user_register') ? 'selected' : ''; ?>>Register</option>
+                            <option value="product_added" <?php echo (isset($_GET['action_type']) && $_GET['action_type'] === 'product_added') ? 'selected' : ''; ?>>Product Add</option>
+                            <option value="product_updated" <?php echo (isset($_GET['action_type']) && $_GET['action_type'] === 'product_updated') ? 'selected' : ''; ?>>Product Edit</option>
+                            <option value="product_deleted" <?php echo (isset($_GET['action_type']) && $_GET['action_type'] === 'product_deleted') ? 'selected' : ''; ?>>Product Delete</option>
+                            <option value="transaction_created" <?php echo (isset($_GET['action_type']) && $_GET['action_type'] === 'transaction_created') ? 'selected' : ''; ?>>Purchase</option>
+                            <option value="stock_updated" <?php echo (isset($_GET['action_type']) && $_GET['action_type'] === 'stock_updated') ? 'selected' : ''; ?>>Stock Update</option>
+                        </select>
+                    </div>
+                    
+                    <div class="col-md-3 d-flex align-items-end">
+                        <button type="submit" class="btn btn-primary w-100">
+                            <i class="fas fa-search me-2"></i>Filter Logs
+                        </button>
+                    </div>
+                </form>
+            </div>
+            
+            <div class="dash-card">
+                <div class="dash-card-header d-flex justify-content-between align-items-center">
+                    <h3>System Activity Logs</h3>
+                    <div>
+                        <button class="btn btn-primary btn-sm" onclick="window.print()">
+                            <i class="fas fa-print me-2"></i>Print Logs
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="table-responsive">
+                    <?php
+                    // Get audit logs with filtering
+                    $startDate = isset($_GET['log_start_date']) ? $_GET['log_start_date'] : date('Y-m-d', strtotime('-7 days'));
+                    $endDate = isset($_GET['log_end_date']) ? $_GET['log_end_date'] : date('Y-m-d');
+                    $actionType = isset($_GET['action_type']) && $_GET['action_type'] !== '' ? $_GET['action_type'] : '';
+                    
+                    // Debug output
+                    echo "<!-- Debug: Action Type = '" . htmlspecialchars($actionType) . "' -->";
+                    
+                    // Convert end date to include the entire day
+                    $endDate = date('Y-m-d 23:59:59', strtotime($endDate));
+                    
+                    // Build the query with filters
+                    $query = "SELECT al.*, u.username 
+                              FROM audit_log al
+                              LEFT JOIN users u ON al.user_id = u.id
+                              WHERE al.created_at BETWEEN :startDate AND :endDate";
+                    
+                    $params = [':startDate' => $startDate, ':endDate' => $endDate];
+                    
+                    if (!empty($actionType)) {
+                        $query .= " AND al.action_type = :actionType";
+                        $params[':actionType'] = $actionType;
+                    }
+                    
+                    $query .= " ORDER BY al.created_at DESC LIMIT 500";
+                    
+                    // Debug output
+                    echo "<!-- Debug: Query = " . htmlspecialchars($query) . " -->";
+                    
+                    try {
+                        $stmt = $pdo->prepare($query);
+                        $stmt->execute($params);
+                        $logs = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                    } catch (PDOException $e) {
+                        echo "<!-- Debug: DB Error = " . htmlspecialchars($e->getMessage()) . " -->";
+                        $logs = [];
+                    }
+                    ?>
+                    
+                    <table class="table table-hover">
+                        <thead>
+                            <tr>
+                                <th>Date & Time</th>
+                                <th>User</th>
+                                <th>Action</th>
+                                <th>Description</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            <?php if (count($logs) > 0): ?>
+                                <?php foreach ($logs as $log): ?>
+                                    <tr>
+                                        <td width="20%"><?php echo date('M d, Y h:i A', strtotime($log['created_at'])); ?></td>
+                                        <td width="15%">
+                                            <?php if (!empty($log['username'])): ?>
+                                                <?php echo htmlspecialchars($log['username']); ?>
+                                            <?php else: ?>
+                                                <span class="text-muted">Unknown User</span>
+                                            <?php endif; ?>
+                                        </td>
+                                        <td width="15%">
+                                            <?php
+                                            $actionClass = 'bg-info';
+                                            
+                                            switch($log['action_type']) {
+                                                case 'user_login':
+                                                    $actionClass = 'bg-success';
+                                                    break;
+                                                case 'user_logout':
+                                                    $actionClass = 'bg-secondary';
+                                                    break;
+                                                case 'user_register':
+                                                    $actionClass = 'bg-primary';
+                                                    break;
+                                                case 'product_added':
+                                                case 'product_updated':
+                                                case 'product_deleted':
+                                                    $actionClass = 'bg-warning text-dark';
+                                                    break;
+                                                case 'transaction_created':
+                                                    $actionClass = 'bg-success';
+                                                    break;
+                                                case 'stock_updated':
+                                                    $actionClass = 'bg-info';
+                                                    break;
+                                                default:
+                                                    $actionClass = 'bg-info';
+                                            }
+                                            ?>
+                                            <span class="badge <?php echo $actionClass; ?>">
+                                                <?php echo htmlspecialchars(ucfirst(str_replace('_', ' ', $log['action_type']))); ?>
+                                            </span>
+                                        </td>
+                                        <td><?php echo htmlspecialchars($log['description']); ?></td>
+                                    </tr>
+                                <?php endforeach; ?>
+                            <?php else: ?>
+                                <tr>
+                                    <td colspan="4" class="text-center py-4">No audit logs found for the selected filters.</td>
+                                </tr>
+                            <?php endif; ?>
+                        </tbody>
+                    </table>
+                    
+                    <?php if (count($logs) >= 500): ?>
+                        <div class="text-center mt-3">
+                            <span class="badge bg-warning text-dark">Showing the 500 most recent logs. Please use filters to narrow your search.</span>
+                        </div>
+                    <?php endif; ?>
+                </div>
+            </div>
         <?php endif; ?>
     </main>
 

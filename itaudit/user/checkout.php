@@ -457,8 +457,8 @@ if (isset($_POST['process_payment'])) {
                             </div>
                             
                             <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                <a href="dashboard.php" class="btn btn-outline-secondary">
-                                    <i class="fas fa-arrow-left"></i> Continue Shopping
+                                <a href="dashboard.php" class="btn btn-outline-secondary d-inline-flex align-items-center justify-content-center">
+                                    <i class="fas fa-arrow-left" style="margin-right: 8px;"></i> Continue Shopping
                                 </a>
                                 <button type="submit" name="process_payment" class="btn btn-primary">
                                     <i class="fas fa-check-circle"></i> Process Payment

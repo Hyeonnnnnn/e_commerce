@@ -601,8 +601,8 @@ if (isset($_POST['checkout'])) {
                                     </div>
                                     
                                     <div class="d-grid gap-2 d-md-flex justify-content-md-end">
-                                        <a href="dashboard.php" class="btn btn-outline-secondary me-md-2" style="font-size: 0.9rem; padding: 0.5rem 1rem; height: 38px; display: flex; align-items: center;">
-                                            <i class="fas fa-arrow-left" style="font-size: 0.9rem; margin-right: 8px; position: relative; top: 1px;"></i> Continue Shopping
+                                        <a href="dashboard.php" class="btn btn-outline-secondary me-md-2 d-inline-flex align-items-center justify-content-center" style="font-size: 0.9rem; padding: 0.6rem 1rem;">
+                                            <i class="fas fa-arrow-left" style="margin-right: 8px;"></i> Continue Shopping
                                         </a>
                                         <button type="submit" name="checkout" class="btn btn-primary">
                                             <i class="fas fa-check-circle"></i> Proceed to Checkout

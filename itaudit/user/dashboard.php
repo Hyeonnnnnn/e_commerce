@@ -544,10 +544,15 @@ if (isset($_POST['checkout'])) {
                                     <?php endif; ?>
                                 </div>
                                 <div class="product-body">
-                                    <span class="product-category"><?php echo htmlspecialchars($product['category']); ?></span>
-                                    <h3 class="product-title"><?php echo htmlspecialchars($product['name']); ?></h3>
+                                    <span class="product-category"><?php echo htmlspecialchars($product['category']); ?></span>                                    <h3 class="product-title"><?php echo htmlspecialchars($product['name']); ?></h3>
                                     <p class="product-description"><?php echo htmlspecialchars($product['description']); ?></p>
-                                    <div class="product-price">₱<?php echo number_format($product['price'], 2); ?></div>
+                                    <div class="product-price">
+                                        <?php
+                                            $tax = $product['price'] * ($product['tax_rate']/100);
+                                            $total_price = $product['price'] + $tax;
+                                            echo "₱" . number_format($total_price, 2);
+                                        ?>
+                                    </div>
                                     <div class="product-stock">
                                         Stock: 
                                         <?php if ($product['stock_quantity'] <= 5): ?>

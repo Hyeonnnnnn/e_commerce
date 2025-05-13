@@ -514,15 +514,10 @@ if (isset($_POST['checkout'])) {
             <?php if (!empty($cart)): ?>
                 <div class="cart-card">
                     <div class="table-responsive">
-                        <table class="table table-cart">
-                            <thead>
+                        <table class="table table-cart">                            <thead>
                                 <tr>
                                     <th>Product</th>
-                                    <th>Price</th>
                                     <th>Quantity</th>
-                                    <th>Tax Rate</th>
-                                    <th>Subtotal</th>
-                                    <th>Tax Amount</th>
                                     <th>Total</th>
                                     <th>Actions</th>
                                 </tr>
@@ -546,10 +541,8 @@ if (isset($_POST['checkout'])) {
                                                     <img src="../images/<?php echo htmlspecialchars($product['product_picture']); ?>" 
                                                          alt="<?php echo htmlspecialchars($product['name']); ?>"
                                                          style="width: 60px; height: 60px; object-fit: cover; border-radius: 4px;">
-                                                </div>
-                                            <?php endif; ?>
+                                                </div>                                            <?php endif; ?>
                                         </td>
-                                        <td>₱<?php echo number_format($product['price'], 2); ?></td>
                                         <td>
                                             <form method="POST" action="" class="quantity-control">
                                                 <input type="hidden" name="product_id" value="<?php echo $productId; ?>">
@@ -563,9 +556,6 @@ if (isset($_POST['checkout'])) {
                                                 </div>
                                             </form>
                                         </td>
-                                        <td><?php echo $product['tax_rate']; ?>%</td>
-                                        <td>₱<?php echo number_format($subtotal, 2); ?></td>
-                                        <td>₱<?php echo number_format($tax, 2); ?></td>
                                         <td>₱<?php echo number_format($itemTotal, 2); ?></td>
                                         <td>
                                             <form method="POST" action="">
@@ -579,9 +569,8 @@ if (isset($_POST['checkout'])) {
                                 <?php 
                                     endif;
                                 endforeach; 
-                                ?>
-                                <tr>
-                                    <td colspan="6" class="text-end">
+                                ?>                                <tr>
+                                    <td colspan="2" class="text-end">
                                         <strong>Grand Total:</strong>
                                     </td>
                                     <td class="grand-total">₱<?php echo number_format($total, 2); ?></td>

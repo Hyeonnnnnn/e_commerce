@@ -66,16 +66,26 @@ function updateStock($productId, $quantity) {
 }
 
 // Product Management Functions
-function getAllProducts($sortBy = 'name', $category = null) {
+function getAllProducts($sortBy = 'name', $category = null, $searchQuery = null) {
     global $pdo;
     
     try {
         $sql = "SELECT * FROM products";
         $params = [];
+        $conditions = [];
         
         if ($category) {
-            $sql .= " WHERE category = ?";
+            $conditions[] = "category = ?";
             $params[] = $category;
+        }
+        
+        if ($searchQuery) {
+            $conditions[] = "name LIKE ?";
+            $params[] = "%$searchQuery%";
+        }
+        
+        if (!empty($conditions)) {
+            $sql .= " WHERE " . implode(" AND ", $conditions);
         }
         
         switch ($sortBy) {

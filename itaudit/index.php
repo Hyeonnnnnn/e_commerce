@@ -100,8 +100,8 @@ if (isLoggedIn()) {
         /* Hero Section */
         .hero {
             height: 100vh;
-            background: linear-gradient(rgba(0, 0, 0, 0.7), rgba(0, 0, 0, 0.7)), 
-                        url('https://images.unsplash.com/photo-1614624532603-258e3f8aa10c?ixlib=rb-4.0.3') no-repeat center center/cover;
+            background: linear-gradient(rgba(0, 0, 0, 0.65), rgba(0, 0, 0, 0.65)), 
+                        url('https://images.unsplash.com/photo-1587202372616-b43abea06c2a?ixlib=rb-4.0.3') no-repeat center center/cover;
             display: flex;
             align-items: center;
             position: relative;

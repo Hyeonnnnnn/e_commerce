@@ -37,6 +37,46 @@ if ($_SERVER['REQUEST_METHOD'] === 'POST') {
             $message = 'Failed to add product';
         }
     }
+    
+    // Handle edit product form submission
+    else if (isset($_POST['edit_product'])) {
+        $id = $_POST['edit_id'] ?? '';
+        $name = $_POST['edit_name'] ?? '';
+        $category = $_POST['edit_category'] ?? '';
+        $description = $_POST['edit_description'] ?? '';
+        $price = $_POST['edit_price'] ?? 0;
+        $stock = $_POST['edit_stock'] ?? 0;
+        $tax_rate = $_POST['edit_tax_rate'] ?? 12.00;
+        
+        // Handle file upload
+        $product_picture = null;
+        if (isset($_FILES['edit_product_image']) && $_FILES['edit_product_image']['error'] === UPLOAD_ERR_OK) {
+            $temp_name = $_FILES['edit_product_image']['tmp_name'];
+            $filename = $_FILES['edit_product_image']['name'];
+            
+            // Move the uploaded file to the images directory
+            if (move_uploaded_file($temp_name, "../images/$filename")) {
+                $product_picture = $filename;
+            }
+        }
+
+        if (updateProduct($id, $name, $category, $description, $price, $stock, $tax_rate, $product_picture)) {
+            $message = 'Product updated successfully';
+        } else {
+            $message = 'Failed to update product';
+        }
+    }
+    
+    // Handle delete product
+    else if (isset($_POST['delete_product'])) {
+        $id = $_POST['delete_product'] ?? '';
+        
+        if (deleteProduct($id)) {
+            $message = 'Product deleted successfully';
+        } else {
+            $message = 'Failed to delete product';
+        }
+    }
 }
 
 // Get reports data if requested
@@ -88,6 +128,11 @@ if (isset($_GET['report_type'])) {
             line-height: 1.6;
             color: var(--dark-gray);
             background-color: #f5f7fa;
+            background-image: linear-gradient(rgba(245, 247, 250, 0.95), rgba(245, 247, 250, 0.95)), 
+                              url('https://images.unsplash.com/photo-1587202372616-b43abea06c2a?ixlib=rb-4.0.3');
+            background-attachment: fixed;
+            background-position: center;
+            background-size: cover;
             display: flex;
             flex-direction: column;
             min-height: 100vh;
@@ -99,7 +144,7 @@ if (isset($_GET['report_type'])) {
         .dashboard-navbar {
             background: var(--gradient-primary);
             padding: 1rem 0;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
             position: sticky;
             top: 0;
             z-index: 1000;
@@ -124,7 +169,7 @@ if (isset($_GET['report_type'])) {
             font-weight: 500;
             padding: 0.7rem 1.2rem;
             margin: 0 0.2rem;
-            border-radius: 5px;
+            border-radius: 30px;
             transition: all 0.3s;
         }
         
@@ -132,6 +177,7 @@ if (isset($_GET['report_type'])) {
         .navbar-nav .nav-link:hover {
             background-color: rgba(255, 255, 255, 0.15);
             transform: translateY(-2px);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
         
         .navbar-nav .nav-link i {
@@ -153,23 +199,43 @@ if (isset($_GET['report_type'])) {
             margin-bottom: 1.5rem;
             padding-bottom: 0.5rem;
             border-bottom: 2px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+        }
+        
+        .page-title i {
+            background: var(--gradient-primary);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            margin-right: 0.5rem;
         }
         
         /* Cards & Content */
         .dash-card {
-            background-color: var(--white);
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            background-color: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
             padding: 1.5rem;
             margin-bottom: 2rem;
             transition: transform 0.3s, box-shadow 0.3s;
-            border: 1px solid #e2e8f0;
+            border: none;
             position: relative;
+            overflow: hidden;
+        }
+        
+        .dash-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--gradient-primary);
         }
         
         .dash-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
         }
         
         .dash-card-header {
@@ -196,6 +262,7 @@ if (isset($_GET['report_type'])) {
         /* Table styling */
         .table-responsive {
             overflow-x: auto;
+            border-radius: 10px;
         }
         
         .table {
@@ -224,7 +291,7 @@ if (isset($_GET['report_type'])) {
         }
         
         .table tbody tr:hover {
-            background-color: #f8fafc;
+            background-color: rgba(66, 153, 225, 0.05);
         }
         
         /* Buttons */
@@ -232,7 +299,7 @@ if (isset($_GET['report_type'])) {
             background: var(--gradient-primary);
             border: none;
             padding: 0.6rem 1.2rem;
-            border-radius: 5px;
+            border-radius: 30px;
             font-weight: 500;
             color: white;
             transition: all 0.3s;
@@ -240,7 +307,7 @@ if (isset($_GET['report_type'])) {
         
         .btn-primary:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 8px rgba(44, 82, 130, 0.3);
+            box-shadow: 0 8px 15px rgba(44, 82, 130, 0.3);
         }
         
         .btn-sm {
@@ -272,7 +339,7 @@ if (isset($_GET['report_type'])) {
         
         .btn-action:hover {
             transform: translateY(-2px);
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
         }
         
         /* Badges */
@@ -292,11 +359,12 @@ if (isset($_GET['report_type'])) {
         }
         
         .modal-content {
-            border-radius: 10px;
+            border-radius: 15px;
             border: none;
-            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
             position: relative;
             z-index: 1052;
+            overflow: hidden;
         }
         
         .modal-backdrop {
@@ -306,19 +374,30 @@ if (isset($_GET['report_type'])) {
         .modal-header {
             background: var(--gradient-primary);
             color: white;
-            border-radius: 10px 10px 0 0;
+            border-radius: 0;
             padding: 1.2rem 1.5rem;
+            border-bottom: none;
         }
         
-        .modal-header h5 {
-            font-weight: 600;
-            font-size: 1.2rem;
-        }
-        
-        .modal-header .close {
+        .modal-header .btn-close-custom {
             color: white;
-            opacity: 1;
+            background: none;
             font-size: 1.5rem;
+            padding: 0;
+            border: none;
+            cursor: pointer;
+            line-height: 1;
+            opacity: 0.8;
+            transition: opacity 0.2s;
+            width: 24px;
+            height: 24px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        .modal-header .btn-close-custom:hover {
+            opacity: 1;
         }
         
         .modal-body {
@@ -330,6 +409,29 @@ if (isset($_GET['report_type'])) {
             padding: 1rem 1.5rem;
         }
         
+        /* Modal footer buttons consistent styling */
+        .modal-footer .btn {
+            border-radius: 30px;
+            padding: 0.6rem 1.2rem;
+            font-weight: 500;
+            transition: all 0.3s;
+        }
+        
+        .modal-footer .btn:hover {
+            transform: translateY(-2px);
+        }
+        
+        .modal-footer .btn-secondary {
+            background-color: #6c757d;
+            border: none;
+            box-shadow: none;
+        }
+        
+        .modal-footer .btn-secondary:hover {
+            background-color: #5a6268;
+            box-shadow: 0 8px 15px rgba(108, 117, 125, 0.3);
+        }
+        
         /* Form elements */
         .form-label {
             font-weight: 500;
@@ -337,14 +439,14 @@ if (isset($_GET['report_type'])) {
             margin-bottom: 0.5rem;
         }
         
-        .form-control {
-            border-radius: 5px;
+        .form-control, .form-select {
+            border-radius: 8px;
             padding: 0.6rem 0.75rem;
             border: 1px solid #cbd5e0;
-            transition: border-color 0.2s;
+            transition: all 0.2s ease;
         }
         
-        .form-control:focus {
+        .form-control:focus, .form-select:focus {
             border-color: var(--primary-light);
             box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.15);
         }
@@ -358,10 +460,10 @@ if (isset($_GET['report_type'])) {
         }
         
         .summary-card {
-            background: var(--white);
+            background-color: rgba(255, 255, 255, 0.95);
             padding: 1.5rem;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
             text-align: center;
             transition: transform 0.3s, box-shadow 0.3s;
             position: relative;
@@ -380,7 +482,7 @@ if (isset($_GET['report_type'])) {
         
         .summary-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 15px rgba(0, 0, 0, 0.1);
+            box-shadow: 0 15px 30px rgba(0, 0, 0, 0.1);
         }
         
         .summary-title {
@@ -396,6 +498,7 @@ if (isset($_GET['report_type'])) {
             font-size: 2rem;
             font-weight: 700;
             color: var(--primary-dark);
+            text-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
         }
         
         .summary-icon {
@@ -410,20 +513,44 @@ if (isset($_GET['report_type'])) {
         /* Filter Form */
         .filter-form {
             padding: 1.5rem;
-            background: white;
-            border-radius: 10px;
-            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05);
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
             margin-bottom: 2rem;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .filter-form::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+            background: var(--gradient-primary);
         }
         
         /* Alert Messages */
         .alert-custom {
-            border-radius: 8px;
+            border-radius: 10px;
             padding: 1rem 1.5rem;
             margin-bottom: 1.5rem;
             border-left: 4px solid;
             display: flex;
             align-items: center;
+            animation: fadeInDown 0.5s ease;
+        }
+        
+        @keyframes fadeInDown {
+            from {
+                opacity: 0;
+                transform: translateY(-20px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
         }
         
         .alert-custom i {
@@ -537,7 +664,6 @@ if (isset($_GET['report_type'])) {
                                 <table class="table table-hover">
                                     <thead>
                                         <tr>
-                                            <th>ID</th>
                                             <th>Product</th>
                                             <th>Category</th>
                                             <th>Price</th>
@@ -549,7 +675,6 @@ if (isset($_GET['report_type'])) {
                                     <tbody>
                                         <?php foreach ($products as $product): ?>
                                             <tr>
-                                                <td><?php echo htmlspecialchars($product['id']); ?></td>
                                                 <td>
                                                     <div class="d-flex align-items-center">
                                                         <?php if (!empty($product['product_picture'])): ?>
@@ -578,9 +703,10 @@ if (isset($_GET['report_type'])) {
                                                 <td><?php echo htmlspecialchars($product['tax_rate']); ?>%</td>
                                                 <td>
                                                     <div class="d-flex align-items-center justify-content-start">
-                                                        <a href="edit_product.php?id=<?php echo $product['id']; ?>" class="btn btn-action btn-edit me-2" title="Edit Product">
+                                                        <button type="button" class="btn btn-action btn-edit me-2" title="Edit Product" 
+                                                               onclick="openEditModal(<?php echo htmlspecialchars(json_encode($product)); ?>)">
                                                             <i class="fas fa-edit"></i>
-                                                        </a>
+                                                        </button>
                                                         <form method="POST" action="" style="margin: 0; display: inline-block; line-height: 0;">
                                                             <input type="hidden" name="delete_product" value="<?php echo $product['id']; ?>">
                                                             <button type="submit" class="btn btn-action btn-delete" onclick="return confirm('Are you sure you want to delete this product?');" title="Delete Product">
@@ -611,7 +737,7 @@ if (isset($_GET['report_type'])) {
                     <div class="modal-content">
                         <div class="modal-header">
                             <h5 class="modal-title" id="addProductModalLabel">Add New Product</h5>
-                            <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                            <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Close">✕</button>
                         </div>
                         <div class="modal-body">
                             <form method="POST" action="" enctype="multipart/form-data" id="addProductForm">
@@ -670,6 +796,74 @@ if (isset($_GET['report_type'])) {
                 </div>
             </div>
 
+            <!-- Edit Product Modal -->
+            <div class="modal fade" id="editProductModal" tabindex="-1" aria-labelledby="editProductModalLabel" aria-hidden="true">
+                <div class="modal-dialog modal-lg">
+                    <div class="modal-content">
+                        <div class="modal-header">
+                            <h5 class="modal-title" id="editProductModalLabel">Edit Product</h5>
+                            <button type="button" class="btn-close-custom" data-bs-dismiss="modal" aria-label="Close">✕</button>
+                        </div>
+                        <div class="modal-body">
+                            <form method="POST" action="" enctype="multipart/form-data" id="editProductForm">
+                                <input type="hidden" id="edit_id" name="edit_id">
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-6">
+                                        <label for="edit_name" class="form-label">Product Name</label>
+                                        <input type="text" class="form-control" id="edit_name" name="edit_name" required>
+                                    </div>
+                                    <div class="col-md-6">
+                                        <label for="edit_category" class="form-label">Category</label>
+                                        <select class="form-select" id="edit_category" name="edit_category" required>
+                                            <option value="CPU">CPU</option>
+                                            <option value="GPU">GPU</option>
+                                            <option value="RAM">RAM</option>
+                                            <option value="Storage">Storage</option>
+                                            <option value="Motherboard">Motherboard</option>
+                                            <option value="PSU">Power Supply</option>
+                                            <option value="Case">Case</option>
+                                            <option value="Peripheral">Peripheral</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="edit_description" class="form-label">Description</label>
+                                    <textarea class="form-control" id="edit_description" name="edit_description" rows="3" required></textarea>
+                                </div>
+                                
+                                <div class="row mb-3">
+                                    <div class="col-md-4">
+                                        <label for="edit_price" class="form-label">Price (₱)</label>
+                                        <input type="number" class="form-control" id="edit_price" name="edit_price" step="0.01" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="edit_stock" class="form-label">Stock Quantity</label>
+                                        <input type="number" class="form-control" id="edit_stock" name="edit_stock" required>
+                                    </div>
+                                    <div class="col-md-4">
+                                        <label for="edit_tax_rate" class="form-label">Tax Rate (%)</label>
+                                        <input type="number" class="form-control" id="edit_tax_rate" name="edit_tax_rate" step="0.01" required>
+                                    </div>
+                                </div>
+                                
+                                <div class="mb-3">
+                                    <label for="edit_product_image" class="form-label">Product Image</label>
+                                    <div id="current_image_container" class="mb-3"></div>
+                                    <input type="file" class="form-control" id="edit_product_image" name="edit_product_image" accept="image/*">
+                                    <div class="form-text">Upload a new image or leave empty to keep the current one</div>
+                                </div>
+                            </form>
+                        </div>
+                        <div class="modal-footer">
+                            <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                            <button type="submit" form="editProductForm" name="edit_product" class="btn btn-primary">Update Product</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
         <?php elseif ($action === 'reports'): ?>
             <h1 class="page-title">
                 <i class="fas fa-chart-line me-2"></i>Sales Reports
@@ -691,7 +885,7 @@ if (isset($_GET['report_type'])) {
                     </div>
                     
                     <div class="col-md-4 d-flex align-items-end">
-                        <button type="submit" class="btn btn-primary w-100">
+                        <button type="submit" class="btn btn-primary w-100 d-flex align-items-center justify-content-center" style="white-space: nowrap; min-width: 180px; margin: 0 auto;">
                             <i class="fas fa-search me-2"></i>Generate Report
                         </button>
                     </div>
@@ -724,9 +918,9 @@ if (isset($_GET['report_type'])) {
                 </div>
 
                 <div class="dash-card">
-                    <div class="dash-card-header">
+                    <div class="dash-card-header d-flex justify-content-between align-items-center">
                         <h3>Detailed Sales</h3>
-                        <button class="btn btn-sm btn-outline-primary" onclick="window.print()">
+                        <button class="btn btn-primary d-flex align-items-center justify-content-center" style="white-space: nowrap; width: 160px; border-radius: 30px;" onclick="window.print()">
                             <i class="fas fa-print me-2"></i>Print Report
                         </button>
                     </div>
@@ -791,6 +985,41 @@ if (isset($_GET['report_type'])) {
                 return new bootstrap.Tooltip(tooltipTriggerEl)
             });
         });
+
+        function openEditModal(product) {
+            document.getElementById('edit_id').value = product.id;
+            document.getElementById('edit_name').value = product.name;
+            document.getElementById('edit_category').value = product.category;
+            document.getElementById('edit_description').value = product.description;
+            document.getElementById('edit_price').value = product.price;
+            document.getElementById('edit_stock').value = product.stock_quantity;
+            document.getElementById('edit_tax_rate').value = product.tax_rate;
+
+            const currentImageContainer = document.getElementById('current_image_container');
+            currentImageContainer.innerHTML = '';
+            if (product.product_picture) {
+                const imgElement = document.createElement('img');
+                imgElement.src = `../images/${product.product_picture}`;
+                imgElement.alt = product.name;
+                imgElement.style.width = '100px';
+                imgElement.style.height = '100px';
+                imgElement.style.objectFit = 'cover';
+                imgElement.style.borderRadius = '8px';
+                imgElement.style.boxShadow = '0 4px 10px rgba(0, 0, 0, 0.1)';
+                imgElement.style.marginBottom = '10px';
+                
+                const imageLabel = document.createElement('p');
+                imageLabel.textContent = 'Current image:';
+                imageLabel.style.marginBottom = '5px';
+                imageLabel.style.fontWeight = '500';
+                
+                currentImageContainer.appendChild(imageLabel);
+                currentImageContainer.appendChild(imgElement);
+            }
+
+            const editProductModal = new bootstrap.Modal(document.getElementById('editProductModal'));
+            editProductModal.show();
+        }
     </script>
 </body>
 </html>
